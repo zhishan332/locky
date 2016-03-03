@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,11 +28,10 @@ public class FileLockerImpl implements FileLocker {
             if (!isLock) {
                 resList.add(new LockResult(file.getName(), isLock));
             }
-        }
+        } else {
+            List<File> fileList = new ArrayList<File>();
+            listLockDirectory(file, fileList);
 
-        File[] fileList = file.listFiles(new LockFileNameFilter());
-
-        if (fileList != null) {
 
             for (File ff : fileList) {
                 boolean isLock = aesAri.lock(ff);
@@ -42,6 +40,7 @@ public class FileLockerImpl implements FileLocker {
                 }
             }
         }
+
         return resList;
     }
 
@@ -56,37 +55,113 @@ public class FileLockerImpl implements FileLocker {
             if (!isLock) {
                 resList.add(new LockResult(file.getName(), isLock));
             }
-        }
-
-        File[] fileList = file.listFiles(new reLockFileNameFilter());
-
-        if (fileList != null) {
+        } else {
+            List<File> fileList = new ArrayList<File>();
+            listReLockDirectory(file, fileList);
 
             for (File ff : fileList) {
-                logger.info("当前解密"+ff.getName());
+                logger.info("当前解密" + ff.getName());
                 boolean isSuc = aesAri.unLock(ff);
-                logger.info("当前解密"+ff.getName()+"结果："+isSuc);
+                logger.info("当前解密" + ff.getName() + "结果：" + isSuc);
                 if (!isSuc) {
                     resList.add(new LockResult(ff.getName(), isSuc));
                 }
             }
         }
+
         return resList;
     }
 
-    static class LockFileNameFilter implements FilenameFilter {
-        private String noAcceptType1="jar";
-        private String noAcceptType2="log";
+    /**
+     * 遍历目录及其子目录下的所有文件并保存
+     *
+     * @param path  目录全路径
+     * @param files 列表：保存文件对象
+     */
+    private void listLockDirectory(File path, List<File> files) {
+        if (path.isDirectory()) {
+            File[] fileList = path.listFiles();
+            if (fileList != null) {
+                for (File file : fileList) {
+                    if (file.isDirectory()) {
+                        listLockDirectory(file, files);
+                    } else {
+                        if(isValidLockFile(file)){
+                            files.add(file);
+                        }
 
-        public boolean accept(File dir,String name){
-            return !name.endsWith(noAcceptType1) && name.contains(".") && !name.endsWith(noAcceptType2) && !name.endsWith(FileNameEntry.ENTRY_SUFFIX);
+                    }
+                }
+            }
+        } else {
+            if(isValidLockFile(path)){
+                files.add(path);
+            }
         }
     }
 
-    static class reLockFileNameFilter implements FilenameFilter {
-
-        public boolean accept(File dir,String name){
-            return name.endsWith(FileNameEntry.ENTRY_SUFFIX);
+    /**
+     * 遍历目录及其子目录下的所有文件并保存
+     *
+     * @param path  目录全路径
+     * @param files 列表：保存文件对象
+     */
+    private void listReLockDirectory(File path, List<File> files) {
+        if (path.isDirectory()) {
+            File[] fileList = path.listFiles();
+            if (fileList != null) {
+                for (File file : fileList) {
+                    if (file.isDirectory()) {
+                        listReLockDirectory(file, files);
+                    } else {
+                        if(isValidReLockFile(file)){
+                            files.add(file);
+                        }
+                    }
+                }
+            }
+        } else {
+            if(isValidReLockFile(path)){
+                files.add(path);
+            }
         }
     }
+
+
+    private boolean isValidLockFile(File file) {
+
+        String noAcceptType1 = "jar";
+        String noAcceptType2 = "log";
+        String noAcceptType3 = "class";
+
+        String name = file.getName();
+
+        return !name.endsWith(noAcceptType1) && name.contains(".") && !name.endsWith(noAcceptType2) && !name.endsWith(noAcceptType3) && !name.endsWith(FileNameEntry.ENTRY_SUFFIX);
+    }
+
+
+    private boolean isValidReLockFile(File file) {
+
+
+        String name = file.getName();
+
+        return name.endsWith(FileNameEntry.ENTRY_SUFFIX);
+    }
+
+//    static class LockFileNameFilter implements FilenameFilter {
+//        private String noAcceptType1 = "jar";
+//        private String noAcceptType2 = "log";
+//        private String noAcceptType3 = "class";
+//
+//        public boolean accept(File dir, String name) {
+//            return dir.isDirectory() || !name.endsWith(noAcceptType1) && name.contains(".") && !name.endsWith(noAcceptType2) && !name.endsWith(noAcceptType3) && !name.endsWith(FileNameEntry.ENTRY_SUFFIX);
+//        }
+//    }
+//
+//    static class reLockFileNameFilter implements FilenameFilter {
+//
+//        public boolean accept(File dir, String name) {
+//            return dir.isDirectory() || name.endsWith(FileNameEntry.ENTRY_SUFFIX);
+//        }
+//    }
 }
