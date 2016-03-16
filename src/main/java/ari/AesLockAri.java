@@ -68,6 +68,7 @@ public class AesLockAri {
 
 
     public boolean lock(File file) {
+        logger.info("正在加密:"+file.getAbsolutePath());
         boolean result = false;
         //新建临时加密文件
         File encrypfile = null;
@@ -89,9 +90,10 @@ public class AesLockAri {
             cipherInputStream.close();
 
             result = true;
+            logger.info("加密成功:"+file.getAbsolutePath());
         } catch (FileNotFoundException e) {
             logger.error("AES加密文件时异常", e);
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("AES加密文件时异常", e);
         } finally {
             try {
@@ -119,7 +121,7 @@ public class AesLockAri {
 
 
     public boolean unLock(File file) {
-
+        logger.info("正在解密:"+file.getAbsolutePath());
         File decryptFile = null;
         InputStream inputStream = null;
         OutputStream outputStream = null;
@@ -137,7 +139,8 @@ public class AesLockAri {
             }
             cipherOutputStream.close();
             result = true;
-        } catch (IOException e) {
+            logger.info("解密成功:"+file.getAbsolutePath());
+        } catch (Exception e) {
             logger.error("AES解密文件时异常", e);
         } finally {
             try {

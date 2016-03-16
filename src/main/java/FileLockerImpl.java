@@ -32,6 +32,7 @@ public class FileLockerImpl implements FileLocker {
             List<File> fileList = new ArrayList<File>();
             listLockDirectory(file, fileList);
 
+            logger.info("获取到递归待加密文件列表："+fileList);
 
             for (File ff : fileList) {
                 boolean isLock = aesAri.lock(ff);
@@ -58,11 +59,9 @@ public class FileLockerImpl implements FileLocker {
         } else {
             List<File> fileList = new ArrayList<File>();
             listReLockDirectory(file, fileList);
-
+            logger.info("获取到递归待解密文件列表："+fileList);
             for (File ff : fileList) {
-                logger.info("当前解密" + ff.getName());
                 boolean isSuc = aesAri.unLock(ff);
-                logger.info("当前解密" + ff.getName() + "结果：" + isSuc);
                 if (!isSuc) {
                     resList.add(new LockResult(ff.getName(), isSuc));
                 }
@@ -130,13 +129,17 @@ public class FileLockerImpl implements FileLocker {
 
     private boolean isValidLockFile(File file) {
 
-        String noAcceptType1 = "jar";
-        String noAcceptType2 = "log";
-        String noAcceptType3 = "class";
+        String noAcceptType1 = ".jar";
+        String noAcceptType2 = ".log";
+        String noAcceptType3 = ".class";
 
         String name = file.getName();
 
-        return !name.endsWith(noAcceptType1) && name.contains(".") && !name.endsWith(noAcceptType2) && !name.endsWith(noAcceptType3) && !name.endsWith(FileNameEntry.ENTRY_SUFFIX);
+        return !name.endsWith(noAcceptType1)
+                && name.contains(".")
+                &&!name.endsWith(noAcceptType2)
+                && !name.endsWith(noAcceptType3)
+                && !name.endsWith(FileNameEntry.ENTRY_SUFFIX);
     }
 
 
